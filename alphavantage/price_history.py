@@ -33,6 +33,10 @@ PERIODS = {
     MONTHLY: 'MONTHLY',
 }
 
+# Timestamp fields
+DATE = 'as_of_date'
+DATETIME = 'as_of_time'
+
 API_KEY = os.environ.get('ALPHA_VANTAGE_API_KEY', '')
 
 
@@ -85,15 +89,16 @@ class Results:
         return self.ticker == other.ticker
 
     def __repr__(self):
-        return format_repr_info(['ticker'])
+        return format_repr_info(self, ['ticker'])
 
 
 class PriceHistory:
     """Price information summary for list of securities."""
 
+    adjusted = False
     RESPONSE_MAP = RESPONSE_KEY_MAP
 
-    time_field = 'as_of_date'
+    time_field = DATE
     FIELDS = (OPEN, HIGH, LOW, CLOSE, VOLUME)
 
     def __init__(self, period=DAILY, output_size=COMPACT, api_key=API_KEY):
@@ -107,7 +112,7 @@ class PriceHistory:
         self.session = requests.session()
 
     def request_parameters(self, ticker):
-        ts_function = get_time_series_function(self.period)
+        ts_function = get_time_series_function(self.period, self.adjusted)
 
         parameters = {
             'function': ts_function,
@@ -186,6 +191,8 @@ class PriceHistory:
 class AdjustedPriceHistory(PriceHistory):
     """Adjusted price history."""
 
+    adjusted = True
+
     RESPONSE_MAP = ADJUSTED_RESPONSE_KEY_MAP
     FIELDS = (
         OPEN, HIGH, LOW, CLOSE, ADJUSTED_CLOSE, VOLUME,
@@ -196,7 +203,7 @@ class AdjustedPriceHistory(PriceHistory):
 class IntradayPriceHistory(PriceHistory):
     """Intraday price history."""
 
-    time_field = 'as_of_time'
+    time_field = DATETIME
     RESPONSE_MAP = INTRADAY_RESPONSE_KEY_MAP
 
     def __init__(self, output_size=COMPACT, api_key=API_KEY, interval=1,
@@ -237,12 +244,17 @@ class IntradayPriceHistory(PriceHistory):
         return updated_at, timezone
 
 
-def get_time_series_function(period):
+def get_time_series_function(period, adjusted=False):
     """Get the time-series function string"""
 
     period_code = PERIODS[period]
 
-    return f'TIME_SERIES_{period_code}'
+    func_str = f'TIME_SERIES_{period_code}'
+
+    if adjusted:
+        func_str += '_ADJUSTED'
+
+    return func_str
 
 
 def build_field_names(fields):
@@ -252,3 +264,19 @@ def build_field_names(fields):
         field = ' '.join(field.split('_'))
 
         yield f'{index}. {field.lower()}'
+
+
+def filter_splits(records):
+    """Filter adjusted records for splits."""
+
+    for record in records:
+        if record[SPLIT_COEFFICIENT] != 1:
+            yield record[DATE], record[SPLIT_COEFFICIENT]
+
+
+def filter_dividends(records):
+    """Filter adjusted records for dividends."""
+
+    for record in records:
+        if record[DIVIDEND] != 0:
+            yield record[DATE], record[DIVIDEND]

@@ -14,11 +14,16 @@ with open(version_path, 'r', encoding=ENCODING) as f:
     exec(f.read(), {}, version_ns)
 
 
-def get_requirements(requirement_file):
+def get_requirements(requirement_file: str):
     requirements = list(
         open(requirement_file, 'r',
              encoding=ENCODING).read().strip().split('\r\n'))
     return requirements
+
+
+def get_readme(readme_file: str):
+    with open(readme_file, encoding='utf-8') as file:
+        return file.read()
 
 
 setup(name=PACKAGE_NAME,
@@ -28,6 +33,8 @@ setup(name=PACKAGE_NAME,
       version=version_ns['__version__'],
       license='MIT',
       description='Alphavantage API wrapper.',
+      long_description=get_readme('README.md'),
+      long_description_content_type='text/markdown',
       url='https://github.com/portfoliome/alphavantage',
       classifiers=[
           'Development Status :: 3 - Alpha',

@@ -7,7 +7,10 @@ https://www.alphavantage.co/documentation/
 """
 
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from operator import itemgetter
+from json import JSONDecodeError
+from urllib.error import HTTPError
 
 import requests
 from foil.formatters import format_repr_info
@@ -297,3 +300,21 @@ def filter_dividends(records):
     for record in records:
         if record[DIVIDEND] != 0:
             yield record[DATE], record[DIVIDEND]
+
+
+def get_results(cls: PriceHistory, tickers: list, parameters: dict):
+    """Return multiple results using threads."""
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        future_to_ticker = {
+            executor.submit(cls(**parameters).get, ticker): ticker
+            for ticker in tickers
+        }
+
+        for future in as_completed(future_to_ticker):
+            ticker = future_to_ticker[future]
+
+            try:
+                yield ticker, future.result()
+            except (HTTPError, JSONDecodeError, KeyError):
+                pass

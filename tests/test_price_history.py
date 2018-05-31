@@ -108,7 +108,7 @@ class TestPriceHistory(unittest.TestCase):
         self.assertEqual(expected, result)
 
     def test_transform_meta_data(self):
-        expected = (self.updated_at, self.timezone)
+        expected = (self.updated_at, self.timezone, False)
         result = self.price_history.transform_meta_data(MOCK_META)
 
         self.assertEqual(expected, result)

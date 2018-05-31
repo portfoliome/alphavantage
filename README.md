@@ -22,26 +22,36 @@ The library carries out some conveniences versus using the API without a wrapper
 * converting timestamps to UTC time when applicable
 * Simplifies record field names i.e. "4. close" -> "close"
 * appends timestamp field to record vs. having timestamp act as dictionary key
-* Sorts records in time ascending order list versus dictionary
+* Uses time ascending list/array versus dictionary/hash for price record data structure.
 * Mapping ticker symbology from other vendors
  
 ## Examples
 ```python
-from alphavantage.price_history import PriceHistory, IntradayPriceHistory
+from alphavantage.price_history import PriceHistory, IntradayPriceHistory, filter_dividends
 
 history = PriceHistory(output_size='compact')
 results = history.get('AAPL')
 
 history = IntradayPriceHistory(utc=True)
 results = history.get('AAPL')
+dividends = list(filter_dividends(results.records))
+
 ```
 
 ## Contributing
 Contributions are welcome. Someone can immediately contribute by building out wrappers for the rest of the API such as FX rates or crypto prices.
 
-### Getting Started
+## Getting Started
 
-These instructions assume Python 3.6. It is recommended that you use conda or a virtualenv. foil is fairly lightweight, but has some dependencies.
+### Installing
+
+```sh
+pip install alphavantage
+```
+
+### Developer Installation
+
+These instructions assume Python 3.6. It is recommended that you use conda or a virtualenv.
 
 #### For conda install follow:
 Download the [conda installer](http://conda.pydata.org/miniconda.html).
@@ -83,4 +93,3 @@ py.test
 ```sh
 py.test --cov
 ```
-

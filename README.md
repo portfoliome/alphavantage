@@ -4,6 +4,14 @@
 
 alphavantage is a Python wrapper for the Alpha Vantage API.
 
+The API wrapper can be used to retrieve historical prices such as intraday or daily prices for global equities and ETFs.
+
+## Status
+
+The API aims to support equity time-series data as a first step.
+
+The package is currently in alpha status. It has not been used extensively yet and therefore mainly of the potential quirks of Alpha Vantage's actual API may not be accounted for. 
+
 ## Design Consideration
 
 This library is intended to provide a simple wrapper with minimal dependencies, and does not intend to introduce pydata stack dependencies (numpy, pandas, etc.) in the future. Differences with existing wrappers for the Alpha Vantage API include:
@@ -19,12 +27,14 @@ The library carries out some conveniences versus using the API without a wrapper
 
 ### Conveniences
 
-* converting timestamps to UTC time when applicable
-* Simplifies record field names i.e. "4. close" -> "close"
-* appends timestamp field to record vs. having timestamp act as dictionary key
-* Uses time ascending list/array versus dictionary/hash for price record data structure.
-* Mapping ticker symbology from other vendors
- 
+* Converts timestamps to UTC time when applicable.
+* Simplifies record field names i.e. "4. close" -> "close".
+* Appends the timestamp field to record vs. having the timestamp act as dictionary key.
+* Uses time ascending list versus a dictionary for price record data structure.
+* Returns multiple tickers over a given parameter set using threads.
+* Maps ticker symbology from other vendors.
+* Excludes intraday data in daily price history requests.
+
 ## Examples
 ```python
 from alphavantage.price_history import (

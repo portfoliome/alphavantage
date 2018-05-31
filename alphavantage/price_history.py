@@ -7,7 +7,10 @@ https://www.alphavantage.co/documentation/
 """
 
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from operator import itemgetter
+from json import JSONDecodeError
+from urllib.error import HTTPError
 
 import requests
 from foil.formatters import format_repr_info
@@ -130,9 +133,13 @@ class PriceHistory:
         return self.get_results(ticker, response, retrieved_at)
 
     def get_results(self, ticker, response, retrieved_at):
-        updated_at, timezone = self.transform_meta_data(response['Meta Data'])
+        updated_at, timezone, is_intraday = self.transform_meta_data(response['Meta Data'])
         records = self.transform_records(response[self.data_key])
         records = self.sort_records(self.convert_timezones(records, timezone))
+
+        # remove intraday record in daily series
+        if is_intraday:
+            records = records[0:-1]
 
         return Results(ticker, records, timezone,
                        updated_at=updated_at, retrieved_at=retrieved_at)
@@ -182,10 +189,23 @@ class PriceHistory:
         tz_key = next(
             key for key in response_meta if key.endswith('Time Zone')
         )
-        updated_at = self.parse_time(response_meta[refresh_key])
+        updated_at, is_intraday = self.parse_refresh_time(
+            response_meta[refresh_key]
+        )
         timezone = response_meta[tz_key]
 
-        return updated_at, timezone
+        return updated_at, timezone, is_intraday
+
+    def parse_refresh_time(self, dt):
+        is_intraday = False
+
+        try:
+            updated_at = self.parse_time(dt)
+        except ValueError:
+            updated_at = self.parse_time(dt[0:10])
+            is_intraday = True
+
+        return updated_at, is_intraday
 
 
 class AdjustedPriceHistory(PriceHistory):
@@ -236,12 +256,12 @@ class IntradayPriceHistory(PriceHistory):
                 yield record
 
     def transform_meta_data(self, response_meta):
-        updated_at, timezone = super().transform_meta_data(response_meta)
+        updated_at, timezone, _ = super().transform_meta_data(response_meta)
 
         if self.utc:
             updated_at = convert_to_utc(updated_at, timezone)
 
-        return updated_at, timezone
+        return updated_at, timezone, None
 
 
 def get_time_series_function(period, adjusted=False):
@@ -280,3 +300,21 @@ def filter_dividends(records):
     for record in records:
         if record[DIVIDEND] != 0:
             yield record[DATE], record[DIVIDEND]
+
+
+def get_results(cls: PriceHistory, tickers: list, parameters: dict):
+    """Return multiple results using threads."""
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        future_to_ticker = {
+            executor.submit(cls(**parameters).get, ticker): ticker
+            for ticker in tickers
+        }
+
+        for future in as_completed(future_to_ticker):
+            ticker = future_to_ticker[future]
+
+            try:
+                yield ticker, future.result()
+            except (HTTPError, JSONDecodeError, KeyError):
+                pass

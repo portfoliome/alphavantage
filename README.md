@@ -27,15 +27,28 @@ The library carries out some conveniences versus using the API without a wrapper
  
 ## Examples
 ```python
-from alphavantage.price_history import PriceHistory, IntradayPriceHistory, filter_dividends
+from alphavantage.price_history import (
+  AdjustedPriceHistory, get_results, PriceHistory, IntradayPriceHistory,
+  filter_dividends
+)
 
-history = PriceHistory(output_size='compact')
+# weekly prices
+history = PriceHistory(period='W', output_size='compact')
 results = history.get('AAPL')
 
-history = IntradayPriceHistory(utc=True)
+# intraday prices, 5 minute interval
+history = IntradayPriceHistory(utc=True, interval=5)
+results = history.get('AAPL')
+
+# adjusted daily prices
+history = AdjustedPriceHistory(period='D')
 results = history.get('AAPL')
 dividends = list(filter_dividends(results.records))
 
+# Return multiple tickers
+parameters = {'output_size': 'compact', 'period': 'D'}
+tickers = ['AAPL', 'MSFT']
+results = dict(get_results(PriceHistory, tickers, parameters))
 ```
 
 ## Contributing

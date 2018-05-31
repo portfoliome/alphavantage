@@ -33,6 +33,10 @@ PERIODS = {
     MONTHLY: 'MONTHLY',
 }
 
+# Timestamp fields
+DATE = 'as_of_date'
+DATETIME = 'as_of_time'
+
 API_KEY = os.environ.get('ALPHA_VANTAGE_API_KEY', '')
 
 
@@ -85,7 +89,7 @@ class Results:
         return self.ticker == other.ticker
 
     def __repr__(self):
-        return format_repr_info(['ticker'])
+        return format_repr_info(self, ['ticker'])
 
 
 class PriceHistory:
@@ -94,7 +98,7 @@ class PriceHistory:
     adjusted = False
     RESPONSE_MAP = RESPONSE_KEY_MAP
 
-    time_field = 'as_of_date'
+    time_field = DATE
     FIELDS = (OPEN, HIGH, LOW, CLOSE, VOLUME)
 
     def __init__(self, period=DAILY, output_size=COMPACT, api_key=API_KEY):
@@ -199,7 +203,7 @@ class AdjustedPriceHistory(PriceHistory):
 class IntradayPriceHistory(PriceHistory):
     """Intraday price history."""
 
-    time_field = 'as_of_time'
+    time_field = DATETIME
     RESPONSE_MAP = INTRADAY_RESPONSE_KEY_MAP
 
     def __init__(self, output_size=COMPACT, api_key=API_KEY, interval=1,
@@ -263,12 +267,16 @@ def build_field_names(fields):
 
 
 def filter_splits(records):
+    """Filter adjusted records for splits."""
+
     for record in records:
-        if record[SPLIT_COEFFICIENT] != 0:
-            yield record['as_of_date'], record[SPLIT_COEFFICIENT]
+        if record[SPLIT_COEFFICIENT] != 1:
+            yield record[DATE], record[SPLIT_COEFFICIENT]
 
 
 def filter_dividends(records):
+    """Filter adjusted records for dividends."""
+
     for record in records:
         if record[DIVIDEND] != 0:
-            yield record['as_of_date'], record[DIVIDEND]
+            yield record[DATE], record[DIVIDEND]

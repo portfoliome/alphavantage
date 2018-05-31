@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/portfoliome/alphavantage.svg?branch=master)](https://travis-ci.com/portfoliome/alpavantage)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/portfoliome/alphavantage/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/portfoliome/alphavantage/?branch=master)
 
 # alphavantage
 
@@ -10,7 +11,8 @@ The API wrapper can be used to retrieve historical prices such as intraday or da
 
 The API aims to support equity time-series data as a first step.
 
-The package is currently in alpha status. It has not been used extensively yet and therefore mainly of the potential quirks of Alpha Vantage's actual API may not be accounted for. 
+The package is currently in alpha status. It has not been used extensively yet and therefore mainly of the potential quirks of Alpha Vantage's actual API may not be accounted for. We plan on using this wrapper for price history charting in our [company lookup and ratings tool](https://esg.censible.co/companies/Apple).
+
 
 ## Design Consideration
 

@@ -45,6 +45,12 @@ class TestHelperFunctions(unittest.TestCase):
 
         self.assertEqual(expected, result)
 
+    def test_get_time_series_function_adjusted(self):
+        expected = 'TIME_SERIES_DAILY_ADJUSTED'
+        result = get_time_series_function('D', adjusted=True)
+
+        self.assertEqual(expected, result)
+
     def test_format_interval(self):
         expected = '5min'
         result = format_interval(5)
